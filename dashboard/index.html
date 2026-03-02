@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Washville API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1em;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .optional-fields {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .optional-fields-title {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .field-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .field-row .input-group {
+            flex: 1;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1em;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .poi-info {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Washville Report Builder</h1>
+
+        <div class="input-group">
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" placeholder="Enter an address" autocomplete="street-address">
+        </div>
+
+        <button onclick="handleSearchPois()" id="searchBtn">Search Locations</button>
+
+        <div id="poiSection" class="hidden">
+            <div class="input-group">
+                <label for="poiSelect">Select a Reference Location</label>
+                <select id="poiSelect">
+                    <option value="">-- Select a location --</option>
+                </select>
+                <div class="poi-info" id="poiInfo"></div>
+            </div>
+
+            <div class="optional-fields">
+                <div class="optional-fields-title">Optional Manual Fields:</div>
+                <div class="field-row">
+                    <div class="input-group">
+                        <label for="landCost">Land Cost ($)</label>
+                        <input type="number" id="landCost" name="landCost" placeholder="e.g. 1500000" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="trafficCounts">Traffic Counts</label>
+                        <input type="number" id="trafficCounts" name="trafficCounts" placeholder="e.g. 25000" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="handleAnalyze()" id="analyzeBtn">Generate Report</button>
+            <button onclick="handleReset()" class="secondary">Start Over</button>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        let searchData = null;
+
+        function showMessage(message, type = 'success') {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = message;
+            messageEl.className = `message ${type} show`;
+        }
+
+        function hideMessage() {
+            const messageEl = document.getElementById('message');
+            messageEl.className = 'message';
+        }
+
+        function handleReset() {
+            searchData = null;
+            document.getElementById('poiSection').classList.add('hidden');
+            document.getElementById('searchBtn').classList.remove('hidden');
+            document.getElementById('address').disabled = false;
+            document.getElementById('poiSelect').innerHTML = '<option value="">-- Select a location --</option>';
+            document.getElementById('poiInfo').textContent = '';
+            document.getElementById('landCost').value = '';
+            document.getElementById('trafficCounts').value = '';
+            hideMessage();
+        }
+
+        async function handleSearchPois() {
+            const address = document.getElementById('address').value;
+            const searchBtn = document.getElementById('searchBtn');
+
+            hideMessage();
+
+            if (!address.trim()) {
+                showMessage('Please enter an address', 'error');
+                return;
+            }
+
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+
+            try {
+                const response = await fetch('/api/pipeline/search-pois', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ address })
+                });
+
+                if (response.ok) {
+                    searchData = await response.json();
+
+                    const poiSelect = document.getElementById('poiSelect');
+                    poiSelect.innerHTML = '<option value="">-- Select a location --</option>';
+
+                    searchData.pois.forEach((poi, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = `${poi.venue.name} - ${poi.venue.address.formattedAddress} (${poi.distance_miles} mi)`;
+                        poiSelect.appendChild(option);
+                    });
+
+                    document.getElementById('poiSection').classList.remove('hidden');
+                    document.getElementById('searchBtn').classList.add('hidden');
+                    document.getElementById('address').disabled = true;
+
+                    showMessage(`Found ${searchData.pois.length} locations near ${searchData.formatted_address}. Please select one.`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error:', response.status, errorData);
+                    showMessage(errorData.detail || 'Failed to search for locations', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('An error occurred while searching for locations', 'error');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search Locations';
+            }
+        }
+
+        document.getElementById('poiSelect').addEventListener('change', function() {
+            const poiInfo = document.getElementById('poiInfo');
+            if (this.value !== '' && searchData) {
+                const poi = searchData.pois[parseInt(this.value)];
+                poiInfo.textContent = `${poi.venue.categoryInfo.category} > ${poi.venue.categoryInfo.subCategory}`;
+            } else {
+                poiInfo.textContent = '';
+            }
+        });
+
+        async function handleAnalyze() {
+            const poiSelect = document.getElementById('poiSelect');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            hideMessage();
+
+            if (poiSelect.value === '' || !searchData) {
+                showMessage('Please select a location', 'error');
+                return;
+            }
+
+            const selectedPoi = searchData.pois[parseInt(poiSelect.value)];
+
+            const landCostInput = document.getElementById('landCost').value;
+            const trafficCountsInput = document.getElementById('trafficCounts').value;
+            const landCost = landCostInput ? parseInt(landCostInput, 10) : null;
+            const trafficCounts = trafficCountsInput ? parseInt(trafficCountsInput, 10) : null;
+
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Generating Report...';
+
+            try {
+                const requestBody = {
+                    address: searchData.formatted_address,
+                    latitude: searchData.latitude,
+                    longitude: searchData.longitude,
+                    poi_id: selectedPoi.venue.apiId,
+                    poi_name: selectedPoi.venue.name
+                };
+
+                if (landCost !== null) {
+                    requestBody.land_cost = landCost;
+                }
+                if (trafficCounts !== null) {
+                    requestBody.traffic_counts = trafficCounts;
+                }
+
+                const response = await fetch('/api/pipeline/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = 'market_analysis.zip';
+
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                        if (filenameMatch && filenameMatch[1]) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showMessage('Zip file downloaded successfully! If your browser blocks the download, click "Keep" to save the file.', 'success');
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error:', response.status, errorData);
+                    showMessage(errorData.detail || 'Failed to generate report', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('An error occurred while generating the report', 'error');
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Generate Report';
+            }
+        }
+
+        document.getElementById('address').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearchPois();
+            }
+        });
+    </script>
+</body>
+</html>
