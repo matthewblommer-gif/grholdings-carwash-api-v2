@@ -43,6 +43,27 @@ async def debug_keys() -> JSONResponse:
     })
 
 
+@router.get("/debug-placer")
+async def debug_placer() -> JSONResponse:
+    """Temporary endpoint to test Placer API connectivity. Remove after debugging."""
+    import requests as req
+    from src.core.settings import get_settings
+    s = get_settings()
+    headers = {"accept": "application/json", "x-api-key": s.placer_api_key}
+    try:
+        resp = req.get("https://papi.placer.ai/v1/poi", params={
+            "lat": 40.7128, "lng": -74.0060, "radius": 1.0,
+            "entityType": "venue", "limit": 1, "category": "Car Wash Services",
+        }, headers=headers)
+        return JSONResponse(status_code=200, content={
+            "placer_status_code": resp.status_code,
+            "placer_response_body": resp.text[:500],
+            "request_headers_sent": {"x-api-key": s.placer_api_key[:6] + "...(redacted)"},
+        })
+    except Exception as e:
+        return JSONResponse(status_code=200, content={"error": str(e)})
+
+
 app.include_router(router)
 app.include_router(address_pipeline.router)
 
