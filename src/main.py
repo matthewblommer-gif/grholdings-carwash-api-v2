@@ -30,6 +30,38 @@ async def healthcheck() -> JSONResponse:
     return JSONResponse(status_code=200, content={"status": "healthy", "service": "grholdings-carwash-api"})
 
 
+@router.get("/debug-post")
+async def debug_post() -> JSONResponse:
+    """Test POST to the exact endpoint that's failing. Remove after debugging."""
+    import requests as req
+    from src.core.settings import get_settings
+    s = get_settings()
+    headers = {"accept": "application/json", "content-type": "application/json", "x-api-key": s.placer_api_key}
+    payload = {
+        "method": "driveTime",
+        "benchmarkScope": "nationwide",
+        "allocationType": "weightedCentroid",
+        "trafficVolPct": 70,
+        "withinRadius": 10,
+        "ringRadius": 3,
+        "dataset": "sti_popstats",
+        "startDate": "2025-01-01",
+        "endDate": "2025-12-31",
+        "apiId": "store_id_not_real",
+        "driveTime": 10,
+        "template": "default",
+    }
+    try:
+        resp = req.post("https://papi.placer.ai/v1/reports/trade-area-demographics", json=payload, headers=headers)
+        return JSONResponse(status_code=200, content={
+            "status_code": resp.status_code,
+            "response_headers": dict(resp.headers),
+            "response_body": resp.text[:1000],
+        })
+    except Exception as e:
+        return JSONResponse(status_code=200, content={"error": str(e)})
+
+
 app.include_router(router)
 app.include_router(address_pipeline.router)
 
