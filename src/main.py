@@ -30,6 +30,19 @@ async def healthcheck() -> JSONResponse:
     return JSONResponse(status_code=200, content={"status": "healthy", "service": "grholdings-carwash-api"})
 
 
+@router.get("/debug-keys")
+async def debug_keys() -> JSONResponse:
+    """Temporary endpoint to verify API keys are loaded. Remove after debugging."""
+    from src.core.settings import get_settings
+    s = get_settings()
+    return JSONResponse(status_code=200, content={
+        "placer_key_length": len(s.placer_api_key) if s.placer_api_key else 0,
+        "placer_key_prefix": s.placer_api_key[:6] + "..." if s.placer_api_key and len(s.placer_api_key) > 6 else "MISSING",
+        "google_key_length": len(s.google_api_key) if s.google_api_key else 0,
+        "google_key_prefix": s.google_api_key[:6] + "..." if s.google_api_key and len(s.google_api_key) > 6 else "MISSING",
+    })
+
+
 app.include_router(router)
 app.include_router(address_pipeline.router)
 
