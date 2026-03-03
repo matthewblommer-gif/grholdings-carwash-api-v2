@@ -18,7 +18,20 @@ class CarParcService:
     KNOWN_MARKET_SHARE_PERCENTAGES = np.array([95, 85, 65])
 
     POI_SEARCH_RADIUS_MILES = 2.5
-    POI_SEARCH_LIMIT = 20
+    POI_SEARCH_LIMIT = 50
+
+    # Only show POI categories that align with retail performance analysis
+    ALLOWED_POI_CATEGORIES = {
+        "Breakfast, Coffee, Bakeries & Dessert Shops",
+        "Fast Food & QSR",
+        "Electronics Stores",
+        "Groceries",
+        "Home Improvement",
+        "Office Supplies",
+        "Drugstores & Pharmacies",
+        "Superstores",
+        "Furniture and Home Furnishings",
+    }
 
     BENCHMARK_SCOPE = "nationwide"
     ALLOCATION_TYPE = "weightedCentroid"
@@ -63,6 +76,10 @@ class CarParcService:
         DISTANCE_FALLBACK = 999.0
 
         venues = self.search_pois(latitude, longitude, search_radius)
+
+        # Filter to only retail-relevant categories
+        venues = [v for v in venues if v.categoryInfo.category in self.ALLOWED_POI_CATEGORIES]
+        logger.info(f"Filtered to {len(venues)} POIs in allowed retail categories")
 
         venues_with_distance = []
         for venue in venues:
