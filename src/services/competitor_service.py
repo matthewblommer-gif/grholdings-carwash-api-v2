@@ -1,5 +1,6 @@
 from typing import Dict, List, Tuple
 
+from requests.exceptions import HTTPError
 from shapely.geometry import shape
 
 from src.clients.placer_client import PlacerClient
@@ -247,7 +248,13 @@ class CompetitorService:
                 total_members = 0
 
             overlap_pct = self.calculate_trade_area_overlap(reference_polygon, venue.apiId, start_date, end_date)
-            car_parc, tta_visits = self.get_competitor_tta_demographics(venue.apiId, start_date, end_date)
+
+            try:
+                car_parc, tta_visits = self.get_competitor_tta_demographics(venue.apiId, start_date, end_date)
+            except (HTTPError, TimeoutError) as e:
+                logger.warning(f"Demographics request failed for {venue.name}: {e}")
+                warnings.append(f"Demographics data unavailable for competitor '{venue.name}' - car parc and TTA visits defaulted to 0")
+                car_parc, tta_visits = 0, 0
 
             members_in_market = int((overlap_pct / 100) * total_members)
 
