@@ -45,7 +45,7 @@ class AnalysisOrchestratorService:
         car_parc_analysis = self.car_parc_service.analyze_car_parc(poi_id, poi_name, drive_times)
 
         logger.info("Step 2: Analyzing competitors")
-        competitors = self.competitor_service.analyze_competitors(latitude, longitude, poi_id)
+        competitors, warnings = self.competitor_service.analyze_competitors(latitude, longitude, poi_id)
 
         logger.info("Step 3: Fetching key stats")
         key_stats = self.key_stats_service.get_key_stats(car_parc_analysis.reference_poi_id)
@@ -74,4 +74,5 @@ class AnalysisOrchestratorService:
             total_market_members=total_market_members,
             land_cost=land_cost,
             traffic_counts=traffic_counts,
+            warnings=warnings,
         )

@@ -56,6 +56,7 @@ class ExcelExportService:
         self._write_key_stats_section(ws, market_analysis)
         self._write_competitors_section(ws, market_analysis)
         self._write_retail_performance_section(ws, market_analysis)
+        self._write_warnings_section(ws, market_analysis)
         self._write_images_section(ws, market_analysis)
 
         ws.column_dimensions["A"].width = 8.63
@@ -619,6 +620,31 @@ class ExcelExportService:
         retailer_count = len(market_analysis.retailers) + (1 if market_analysis.reference_poi_retail else 0)
         logger.debug(f"Retail performance section created with {retailer_count} retailers (including POI)")
         return total_row
+
+    def _write_warnings_section(self, ws, market_analysis: MarketAnalysis) -> None:
+        if not market_analysis.warnings:
+            return
+
+        logger.info(f"Writing {len(market_analysis.warnings)} warnings to Excel")
+
+        # Find the last used row to place warnings below all data
+        last_row = ws.max_row + 2
+
+        ws.cell(row=last_row, column=2, value="Warnings")
+        ws.cell(row=last_row, column=2).font = Font(
+            name=ExcelStyles.DEFAULT_FONT, bold=True, color="C0392B"
+        )
+
+        warning_fill = PatternFill(start_color="FEF0EC", end_color="FEF0EC", fill_type="solid")
+        warning_font = Font(name=ExcelStyles.DEFAULT_FONT, color="C0392B", size=9)
+
+        for i, warning in enumerate(market_analysis.warnings):
+            row = last_row + 1 + i
+            cell = ws.cell(row=row, column=2, value=f"⚠ {warning}")
+            cell.font = warning_font
+            cell.fill = warning_fill
+            # Merge across columns B-F so the warning text has room
+            ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=6)
 
     def _write_images_section(self, ws, market_analysis: MarketAnalysis) -> None:
         if not self._location_service:

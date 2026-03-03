@@ -1,3 +1,4 @@
+import json
 import re
 
 from fastapi import APIRouter, status, HTTPException
@@ -127,16 +128,22 @@ async def analyze_market(request: AnalyzeRequest) -> Response:
 
         logger.info(f"Excel file created: {excel_filename}")
 
+        response_headers = {
+            "Content-Disposition": f"attachment; filename={excel_filename}",
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+
+        if market_analysis.warnings:
+            response_headers["X-Warnings"] = json.dumps(market_analysis.warnings)
+            response_headers["Access-Control-Expose-Headers"] = "X-Warnings"
+
         return Response(
             content=excel_bytes,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f"attachment; filename={excel_filename}",
-                "X-Content-Type-Options": "nosniff",
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0",
-            },
+            headers=response_headers,
         )
 
     except Exception as e:

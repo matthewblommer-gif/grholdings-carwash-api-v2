@@ -188,6 +188,7 @@
             background-color: #fff8f0;
             color: #856404;
             border: 1px solid #FFB499;
+            white-space: pre-line;
         }
 
         .hidden {
@@ -388,6 +389,21 @@
 
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
+
+                    // Check for warnings from the API
+                    const warningsHeader = response.headers.get('X-Warnings');
+                    if (warningsHeader) {
+                        try {
+                            const warnings = JSON.parse(warningsHeader);
+                            if (warnings.length > 0) {
+                                const warningText = 'Report downloaded with warnings:\n• ' + warnings.join('\n• ');
+                                showMessage(warningText, 'warning');
+                                return;
+                            }
+                        } catch (e) {
+                            console.warn('Could not parse warnings header:', e);
+                        }
+                    }
 
                     showMessage('Report downloaded successfully!', 'success');
                 } else {

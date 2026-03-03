@@ -22,3 +22,4 @@ class MarketAnalysis(BaseModel):
     total_market_members: int
     land_cost: Optional[int] = None
     traffic_counts: Optional[int] = None
+    warnings: List[str] = []

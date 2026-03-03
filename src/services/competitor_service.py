@@ -189,7 +189,7 @@ class CompetitorService:
         longitude: float,
         reference_poi_id: str,
         max_drive_time_minutes: float = None,
-    ) -> List[Competitor]:
+    ) -> Tuple[List[Competitor], List[str]]:
         if max_drive_time_minutes is None:
             max_drive_time_minutes = self.MAX_DRIVE_TIME_MINUTES
 
@@ -232,13 +232,20 @@ class CompetitorService:
         reference_polygon = shape(ref_geojson)
 
         competitors = []
+        warnings = []
         logger.info(f"Building competitor models for {len(qualified_venues)} venues")
 
         for venue in qualified_venues:
             drive_info = drive_time_data[venue.apiId]
             yearly_visits = visit_data[venue.apiId]
 
-            total_members = self.calculate_total_members(venue.apiId, second_half_dates[0], second_half_dates[1])
+            try:
+                total_members = self.calculate_total_members(venue.apiId, second_half_dates[0], second_half_dates[1])
+            except TimeoutError:
+                logger.warning(f"Loyalty request timed out for {venue.name}, defaulting to 0 members")
+                warnings.append(f"Loyalty data timed out for competitor '{venue.name}' - member count defaulted to 0")
+                total_members = 0
+
             overlap_pct = self.calculate_trade_area_overlap(reference_polygon, venue.apiId, start_date, end_date)
             car_parc, tta_visits = self.get_competitor_tta_demographics(venue.apiId, start_date, end_date)
 
@@ -268,5 +275,5 @@ class CompetitorService:
                 f"{competitor.name}: {competitor.total_members:,} members, " f"{competitor.overlap_percentage:.1f}% overlap, " f"{competitor.members_in_market:,} in market"
             )
 
-        logger.info(f"Competitor analysis complete: {len(competitors)} competitors")
-        return competitors
+        logger.info(f"Competitor analysis complete: {len(competitors)} competitors, {len(warnings)} warnings")
+        return competitors, warnings
