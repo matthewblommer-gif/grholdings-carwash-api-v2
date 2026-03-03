@@ -7,7 +7,7 @@ class RankingDetail(BaseModel):
     rank: int
     percentile: int
     rankedOutOf: int
-    regionCode: str
+    regionCode: Optional[str] = None
 
 
 class VenueRanking(BaseModel):
