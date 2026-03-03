@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Washville API</title>
+    <title>Washville Report Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,8 +15,8 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #154D95 0%, #49B9E6 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -23,18 +26,39 @@
 
         .container {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            max-width: 600px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            padding: 0;
+            max-width: 520px;
             width: 100%;
+            overflow: hidden;
         }
 
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5em;
+        .header {
+            background: #154D95;
+            padding: 28px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header img {
+            height: 48px;
+            width: auto;
+        }
+
+        .content {
+            padding: 36px 40px 40px;
+        }
+
+        .page-title {
+            color: #154D95;
+            font-size: 1.25em;
+            font-weight: 500;
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 28px;
         }
 
         .input-group {
@@ -43,62 +67,46 @@
 
         label {
             display: block;
-            color: #555;
+            color: #154D95;
             margin-bottom: 8px;
             font-weight: 500;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        input[type="text"],
-        input[type="number"] {
+        input[type="text"] {
             width: 100%;
             padding: 12px 16px;
             font-size: 1em;
+            font-family: 'Roboto', sans-serif;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             transition: border-color 0.3s;
+            color: #333;
         }
 
-        input[type="text"]:focus,
-        input[type="number"]:focus {
+        input[type="text"]:focus {
             outline: none;
-            border-color: #667eea;
-        }
-
-        .optional-fields {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .optional-fields-title {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 15px;
-        }
-
-        .field-row {
-            display: flex;
-            gap: 15px;
-        }
-
-        .field-row .input-group {
-            flex: 1;
+            border-color: #49B9E6;
         }
 
         select {
             width: 100%;
             padding: 12px 16px;
             font-size: 1em;
+            font-family: 'Roboto', sans-serif;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             transition: border-color 0.3s;
             background: white;
             cursor: pointer;
+            color: #333;
         }
 
         select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #49B9E6;
         }
 
         select:disabled {
@@ -109,20 +117,24 @@
         button {
             width: 100%;
             padding: 14px;
-            font-size: 1.1em;
-            font-weight: 600;
+            font-size: 1em;
+            font-weight: 500;
+            font-family: 'Roboto', sans-serif;
             color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #154D95;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
             margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: #2066B2;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(21, 77, 149, 0.35);
         }
 
         button:active {
@@ -136,18 +148,22 @@
         }
 
         button.secondary {
-            background: #6c757d;
+            background: transparent;
+            color: #154D95;
+            border: 2px solid #154D95;
         }
 
         button.secondary:hover {
-            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+            background: #154D95;
+            color: white;
+            box-shadow: 0 4px 12px rgba(21, 77, 149, 0.2);
         }
 
         .message {
             margin-top: 20px;
-            padding: 16px;
+            padding: 14px 16px;
             border-radius: 8px;
-            font-size: 0.95em;
+            font-size: 0.9em;
             display: none;
             animation: slideIn 0.3s ease-out;
         }
@@ -157,21 +173,21 @@
         }
 
         .message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background-color: #e8f4f8;
+            color: #154D95;
+            border: 1px solid #49B9E6;
         }
 
         .message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background-color: #fef0ec;
+            color: #c0392b;
+            border: 1px solid #FFB499;
         }
 
         .message.warning {
-            background-color: #fff3cd;
+            background-color: #fff8f0;
             color: #856404;
-            border: 1px solid #ffeaa7;
+            border: 1px solid #FFB499;
         }
 
         .hidden {
@@ -179,9 +195,9 @@
         }
 
         .poi-info {
-            font-size: 0.85em;
-            color: #666;
-            margin-top: 4px;
+            font-size: 0.8em;
+            color: #606060;
+            margin-top: 6px;
         }
 
         @keyframes slideIn {
@@ -198,43 +214,34 @@
 </head>
 <body>
     <div class="container">
-        <h1>Washville Report Builder</h1>
-
-        <div class="input-group">
-            <label for="address">Address</label>
-            <input type="text" id="address" name="address" placeholder="Enter an address" autocomplete="street-address">
+        <div class="header">
+            <img src="/static/washville-logo.png" alt="Washville">
         </div>
+        <div class="content">
+            <div class="page-title">Report Builder</div>
 
-        <button onclick="handleSearchPois()" id="searchBtn">Search Locations</button>
-
-        <div id="poiSection" class="hidden">
             <div class="input-group">
-                <label for="poiSelect">Select a Reference Location</label>
-                <select id="poiSelect">
-                    <option value="">-- Select a location --</option>
-                </select>
-                <div class="poi-info" id="poiInfo"></div>
+                <label for="address">Address</label>
+                <input type="text" id="address" name="address" placeholder="Enter an address" autocomplete="street-address">
             </div>
 
-            <div class="optional-fields">
-                <div class="optional-fields-title">Optional Manual Fields:</div>
-                <div class="field-row">
-                    <div class="input-group">
-                        <label for="landCost">Land Cost ($)</label>
-                        <input type="number" id="landCost" name="landCost" placeholder="e.g. 1500000" min="0">
-                    </div>
-                    <div class="input-group">
-                        <label for="trafficCounts">Traffic Counts</label>
-                        <input type="number" id="trafficCounts" name="trafficCounts" placeholder="e.g. 25000" min="0">
-                    </div>
+            <button onclick="handleSearchPois()" id="searchBtn">Search Locations</button>
+
+            <div id="poiSection" class="hidden">
+                <div class="input-group">
+                    <label for="poiSelect">Select a Reference Location</label>
+                    <select id="poiSelect">
+                        <option value="">-- Select a location --</option>
+                    </select>
+                    <div class="poi-info" id="poiInfo"></div>
                 </div>
+
+                <button onclick="handleAnalyze()" id="analyzeBtn">Generate Report</button>
+                <button onclick="handleReset()" class="secondary">Start Over</button>
             </div>
 
-            <button onclick="handleAnalyze()" id="analyzeBtn">Generate Report</button>
-            <button onclick="handleReset()" class="secondary">Start Over</button>
+            <div id="message" class="message"></div>
         </div>
-
-        <div id="message" class="message"></div>
     </div>
 
     <script>
@@ -258,8 +265,6 @@
             document.getElementById('address').disabled = false;
             document.getElementById('poiSelect').innerHTML = '<option value="">-- Select a location --</option>';
             document.getElementById('poiInfo').textContent = '';
-            document.getElementById('landCost').value = '';
-            document.getElementById('trafficCounts').value = '';
             hideMessage();
         }
 
@@ -341,11 +346,6 @@
 
             const selectedPoi = searchData.pois[parseInt(poiSelect.value)];
 
-            const landCostInput = document.getElementById('landCost').value;
-            const trafficCountsInput = document.getElementById('trafficCounts').value;
-            const landCost = landCostInput ? parseInt(landCostInput, 10) : null;
-            const trafficCounts = trafficCountsInput ? parseInt(trafficCountsInput, 10) : null;
-
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = 'Generating Report...';
 
@@ -357,13 +357,6 @@
                     poi_id: selectedPoi.venue.apiId,
                     poi_name: selectedPoi.venue.name
                 };
-
-                if (landCost !== null) {
-                    requestBody.land_cost = landCost;
-                }
-                if (trafficCounts !== null) {
-                    requestBody.traffic_counts = trafficCounts;
-                }
 
                 const response = await fetch('/api/pipeline/analyze', {
                     method: 'POST',
@@ -377,7 +370,7 @@
                     const blob = await response.blob();
 
                     const contentDisposition = response.headers.get('Content-Disposition');
-                    let filename = 'market_analysis.zip';
+                    let filename = 'market_analysis.xlsx';
 
                     if (contentDisposition) {
                         const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
@@ -396,7 +389,7 @@
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
 
-                    showMessage('Zip file downloaded successfully! If your browser blocks the download, click "Keep" to save the file.', 'success');
+                    showMessage('Report downloaded successfully!', 'success');
                 } else {
                     const errorData = await response.json();
                     console.error('Error:', response.status, errorData);

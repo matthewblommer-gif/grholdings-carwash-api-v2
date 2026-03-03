@@ -1,6 +1,4 @@
 import re
-import zipfile
-from io import BytesIO
 
 from fastapi import APIRouter, status, HTTPException
 from fastapi.responses import Response
@@ -15,7 +13,6 @@ from src.services.competitor_service import CompetitorService
 from src.services.excel_export_service import ExcelExportService
 from src.services.google_location_service import GoogleLocationService
 from src.services.key_stats_service import KeyStatsService
-from src.services.powerpoint_export_service import PowerPointExportService
 from src.services.retail_performance_service import RetailPerformanceService
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
@@ -38,7 +35,6 @@ orchestrator = AnalysisOrchestratorService(
 )
 
 excel_service = ExcelExportService(location_service=location_service)
-powerpoint_service = PowerPointExportService(location_service=location_service)
 
 
 @router.post("/search-pois", status_code=status.HTTP_200_OK)
@@ -125,30 +121,17 @@ async def analyze_market(request: AnalyzeRequest) -> Response:
         excel_bytes = excel_service.export_market_analysis(market_analysis)
         logger.info("Excel export completed")
 
-        powerpoint_bytes = powerpoint_service.export_market_analysis(market_analysis)
-        logger.info("PowerPoint export completed")
-
         clean_address = re.sub(r"[^a-zA-Z0-9\s-]", "", market_analysis.address)
         clean_address = re.sub(r"\s+", "_", clean_address.strip())
         excel_filename = f"{clean_address}.xlsx"
-        powerpoint_filename = f"{clean_address}.pptx"
 
-        zip_buffer = BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr(excel_filename, excel_bytes)
-            zip_file.writestr(powerpoint_filename, powerpoint_bytes)
-
-        zip_buffer.seek(0)
-        zip_bytes = zip_buffer.getvalue()
-
-        zip_filename = f"{clean_address}.zip"
-        logger.info(f"Zip file created: {zip_filename}")
+        logger.info(f"Excel file created: {excel_filename}")
 
         return Response(
-            content=zip_bytes,
-            media_type="application/zip",
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={
-                "Content-Disposition": f"attachment; filename={zip_filename}",
+                "Content-Disposition": f"attachment; filename={excel_filename}",
                 "X-Content-Type-Options": "nosniff",
                 "Cache-Control": "no-cache, no-store, must-revalidate",
                 "Pragma": "no-cache",
