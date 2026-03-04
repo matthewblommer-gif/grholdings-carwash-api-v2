@@ -145,17 +145,34 @@ class PlacerClient:
         raise TimeoutError(f"Demographics request timed out after {max_retries} attempts")
 
     def get_visit_trends(self, payload: dict, max_retries: int = 10, retry_delay_seconds: int = 3, _shift_count: int = 0) -> dict:
+        api_ids = payload.get("apiIds", [])
+
+        # Batch large requests to avoid 400 errors from too many apiIds
+        if len(api_ids) > 20:
+            logger.info(f"Batching visit trends request: {len(api_ids)} venues in chunks of 20")
+            all_data = []
+            request_id = ""
+            for i in range(0, len(api_ids), 20):
+                chunk = api_ids[i:i + 20]
+                chunk_payload = {**payload, "apiIds": chunk}
+                chunk_result = self.get_visit_trends(chunk_payload, max_retries, retry_delay_seconds, _shift_count)
+                all_data.extend(chunk_result.get("data", []))
+                request_id = chunk_result.get("requestId", request_id)
+            combined = {"data": all_data, "requestId": request_id}
+            self._set_cached(self._make_cache_key("visit_trends", payload), combined)
+            return combined
+
         cache_key = self._make_cache_key("visit_trends", payload)
 
         cached = self._get_cached(cache_key)
         if cached is not None:
-            logger.debug(f"Cache hit for visit trends: {len(payload.get('apiIds', []))} venues")
+            logger.debug(f"Cache hit for visit trends: {len(api_ids)} venues")
             return cached
 
         url = f"{self.base_url}/reports/visit-trends"
         headers = {**self._headers, "content-type": "application/json"}
 
-        logger.debug(f"Fetching visit trends for {len(payload.get('apiIds', []))} venues")
+        logger.debug(f"Fetching visit trends for {len(api_ids)} venues")
 
         for attempt in range(max_retries):
             increment_placer_count()
