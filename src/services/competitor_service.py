@@ -73,6 +73,10 @@ class CompetitorService:
     def filter_by_visit_threshold(self, venues: List[Venue], start_date: str, end_date: str) -> Tuple[List[Venue], Dict[str, int]]:
         logger.info(f"Filtering {len(venues)} venues by visit threshold (>= {self.MIN_YEARLY_VISITS})")
 
+        if not venues:
+            logger.info("No venues to filter, returning empty results")
+            return [], {}
+
         api_ids = [venue.apiId for venue in venues]
 
         payload = {

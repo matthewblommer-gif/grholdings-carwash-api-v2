@@ -110,6 +110,10 @@ class RetailPerformanceService:
     def get_visit_trends(self, venues: List[Venue]) -> Dict[str, int]:
         logger.info(f"Fetching visit trends for {len(venues)} retail venues")
 
+        if not venues:
+            logger.info("No venues to fetch visit trends for, returning empty results")
+            return {}
+
         api_ids = [venue.apiId for venue in venues]
 
         start_date, end_date = get_last_12_months_date_range()
