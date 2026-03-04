@@ -30,12 +30,12 @@ class PlacerClient:
     def _set_cached(self, key: str, value: Any) -> None:
         self._cache.set(key, value, expire=calculate_cache_ttl())
 
-    def _shift_payload_dates(self, payload: dict) -> dict:
-        """Create a copy of the payload with dates shifted back 1 month for Placer data lag."""
+    def _shift_payload_dates(self, payload: dict, months: int = 1) -> dict:
+        """Create a copy of the payload with dates shifted back by the given number of months for Placer data lag."""
         shifted = payload.copy()
         if "startDate" in shifted and "endDate" in shifted:
             shifted["startDate"], shifted["endDate"] = shift_dates_back(
-                shifted["startDate"], shifted["endDate"]
+                shifted["startDate"], shifted["endDate"], months=months
             )
         return shifted
 
@@ -95,7 +95,7 @@ class PlacerClient:
         self._set_cached(cache_key, result)
         return result
 
-    def get_demographics(self, payload: dict, max_retries: int = 15, retry_delay_seconds: int = 2, _date_shifted: bool = False) -> Optional[dict]:
+    def get_demographics(self, payload: dict, max_retries: int = 15, retry_delay_seconds: int = 2, _shift_count: int = 0) -> Optional[dict]:
         cache_key = self._make_cache_key("demographics", payload)
 
         cached = self._get_cached(cache_key)
@@ -117,13 +117,13 @@ class PlacerClient:
                 return None
 
             if response.status_code not in [200, 202]:
-                if response.status_code == 400 and not _date_shifted and "startDate" in payload:
-                    shifted = self._shift_payload_dates(payload)
+                if response.status_code == 400 and _shift_count < 3 and "startDate" in payload:
+                    shifted = self._shift_payload_dates(payload, months=_shift_count + 1)
                     logger.warning(
                         f"Demographics API returned 400 for dates {payload['startDate']} to {payload['endDate']}. "
                         f"Retrying with {shifted['startDate']} to {shifted['endDate']}"
                     )
-                    return self.get_demographics(shifted, max_retries, retry_delay_seconds, _date_shifted=True)
+                    return self.get_demographics(shifted, max_retries, retry_delay_seconds, _shift_count=_shift_count + 1)
                 logger.error(f"Demographics API error: {response.status_code} - {response.text}")
                 response.raise_for_status()
 
@@ -144,7 +144,7 @@ class PlacerClient:
 
         raise TimeoutError(f"Demographics request timed out after {max_retries} attempts")
 
-    def get_visit_trends(self, payload: dict, max_retries: int = 10, retry_delay_seconds: int = 3, _date_shifted: bool = False) -> dict:
+    def get_visit_trends(self, payload: dict, max_retries: int = 10, retry_delay_seconds: int = 3, _shift_count: int = 0) -> dict:
         cache_key = self._make_cache_key("visit_trends", payload)
 
         cached = self._get_cached(cache_key)
@@ -162,13 +162,13 @@ class PlacerClient:
             response = requests.post(url, json=payload, headers=headers)
 
             if response.status_code not in [200, 207]:
-                if response.status_code == 400 and not _date_shifted and "startDate" in payload:
-                    shifted = self._shift_payload_dates(payload)
+                if response.status_code == 400 and _shift_count < 3 and "startDate" in payload:
+                    shifted = self._shift_payload_dates(payload, months=_shift_count + 1)
                     logger.warning(
                         f"Visit trends API returned 400 for dates {payload['startDate']} to {payload['endDate']}. "
                         f"Retrying with {shifted['startDate']} to {shifted['endDate']}"
                     )
-                    return self.get_visit_trends(shifted, max_retries, retry_delay_seconds, _date_shifted=True)
+                    return self.get_visit_trends(shifted, max_retries, retry_delay_seconds, _shift_count=_shift_count + 1)
                 logger.error(f"Visit trends API error: {response.status_code} - {response.text}")
                 response.raise_for_status()
 
@@ -189,7 +189,7 @@ class PlacerClient:
 
         raise TimeoutError(f"Visit trends request timed out after {max_retries} attempts")
 
-    def get_loyalty_frequency(self, payload: dict, max_retries: int = 10, retry_delay_seconds: int = 3, _date_shifted: bool = False) -> dict:
+    def get_loyalty_frequency(self, payload: dict, max_retries: int = 10, retry_delay_seconds: int = 3, _shift_count: int = 0) -> dict:
         cache_key = self._make_cache_key("loyalty", payload)
 
         cached = self._get_cached(cache_key)
@@ -216,13 +216,13 @@ class PlacerClient:
                     raise TimeoutError(f"Loyalty request timed out after {max_retries} attempts")
 
             if response.status_code not in [200, 207]:
-                if response.status_code == 400 and not _date_shifted and "startDate" in payload:
-                    shifted = self._shift_payload_dates(payload)
+                if response.status_code == 400 and _shift_count < 3 and "startDate" in payload:
+                    shifted = self._shift_payload_dates(payload, months=_shift_count + 1)
                     logger.warning(
                         f"Loyalty API returned 400 for dates {payload['startDate']} to {payload['endDate']}. "
                         f"Retrying with {shifted['startDate']} to {shifted['endDate']}"
                     )
-                    return self.get_loyalty_frequency(shifted, max_retries, retry_delay_seconds, _date_shifted=True)
+                    return self.get_loyalty_frequency(shifted, max_retries, retry_delay_seconds, _shift_count=_shift_count + 1)
                 logger.error(f"Loyalty API error: {response.status_code}")
                 response.raise_for_status()
 
@@ -234,7 +234,7 @@ class PlacerClient:
 
         raise TimeoutError(f"Loyalty request timed out after {max_retries} attempts")
 
-    def get_trade_area(self, payload: dict, max_retries: int = 10, retry_delay_seconds: int = 3, _date_shifted: bool = False) -> dict:
+    def get_trade_area(self, payload: dict, max_retries: int = 10, retry_delay_seconds: int = 3, _shift_count: int = 0) -> dict:
         cache_key = self._make_cache_key("trade_area", payload)
 
         cached = self._get_cached(cache_key)
@@ -261,13 +261,13 @@ class PlacerClient:
                     raise TimeoutError(f"Trade area request timed out after {max_retries} attempts")
 
             if response.status_code != 200:
-                if response.status_code == 400 and not _date_shifted and "startDate" in payload:
-                    shifted = self._shift_payload_dates(payload)
+                if response.status_code == 400 and _shift_count < 3 and "startDate" in payload:
+                    shifted = self._shift_payload_dates(payload, months=_shift_count + 1)
                     logger.warning(
                         f"Trade area API returned 400 for dates {payload['startDate']} to {payload['endDate']}. "
                         f"Retrying with {shifted['startDate']} to {shifted['endDate']}"
                     )
-                    return self.get_trade_area(shifted, max_retries, retry_delay_seconds, _date_shifted=True)
+                    return self.get_trade_area(shifted, max_retries, retry_delay_seconds, _shift_count=_shift_count + 1)
                 logger.error(f"Trade area API error: {response.status_code}")
                 response.raise_for_status()
 
@@ -279,7 +279,7 @@ class PlacerClient:
 
         raise TimeoutError(f"Trade area request timed out after {max_retries} attempts")
 
-    def get_ranking_single(self, payload: dict, _date_shifted: bool = False) -> dict:
+    def get_ranking_single(self, payload: dict, _shift_count: int = 0) -> dict:
         cache_key = self._make_cache_key("ranking_single", payload)
 
         cached = self._get_cached(cache_key)
@@ -296,13 +296,13 @@ class PlacerClient:
         response = requests.post(url, json=payload, headers=headers)
 
         if response.status_code not in [200, 207]:
-            if response.status_code == 400 and not _date_shifted and "startDate" in payload:
-                shifted = self._shift_payload_dates(payload)
+            if response.status_code == 400 and _shift_count < 3 and "startDate" in payload:
+                shifted = self._shift_payload_dates(payload, months=_shift_count + 1)
                 logger.warning(
                     f"Ranking API returned 400 for dates {payload['startDate']} to {payload['endDate']}. "
                     f"Retrying with {shifted['startDate']} to {shifted['endDate']}"
                 )
-                return self.get_ranking_single(shifted, _date_shifted=True)
+                return self.get_ranking_single(shifted, _shift_count=_shift_count + 1)
             logger.error(f"Ranking single API error: {response.status_code} - {response.text}")
             response.raise_for_status()
 
