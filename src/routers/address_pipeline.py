@@ -8,6 +8,7 @@ from src.clients.placer_client import PlacerClient
 from src.core.logging import logger
 from src.core.settings import get_settings
 from src.models.address import AddressRequest, AnalyzeRequest, POISearchResponse, POIWithDistance
+from src.models.market_analysis import MarketAnalysis
 from src.services.analysis_orchestrator_service import AnalysisOrchestratorService
 from src.services.car_parc_service import CarParcService
 from src.services.competitor_service import CompetitorService
@@ -92,6 +93,25 @@ async def search_pois(request: AddressRequest) -> POISearchResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"POI search failed: {str(e)}",
         )
+
+
+@router.post("/analyze-json", status_code=status.HTTP_200_OK)
+async def analyze_market_json(request: AnalyzeRequest) -> MarketAnalysis:
+    """Return raw market analysis as JSON (faster, no Excel export)."""
+    logger.info(f"Starting JSON market analysis for address: {request.address}, POI: {request.poi_name}")
+
+    market_analysis = orchestrator.analyze_market(
+        address=request.address,
+        latitude=request.latitude,
+        longitude=request.longitude,
+        poi_id=request.poi_id,
+        poi_name=request.poi_name,
+        land_cost=request.land_cost,
+        traffic_counts=request.traffic_counts,
+    )
+
+    logger.info(f"JSON market analysis completed for {request.address} with {len(market_analysis.warnings)} warnings")
+    return market_analysis
 
 
 @router.post("/analyze", status_code=status.HTTP_200_OK)
