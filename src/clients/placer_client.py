@@ -30,6 +30,16 @@ class PlacerClient:
     def _set_cached(self, key: str, value: Any) -> None:
         self._cache.set(key, value, expire=calculate_cache_ttl())
 
+    def _safe_json(self, response: requests.Response) -> dict:
+        """Parse JSON response, handling empty bodies gracefully."""
+        if not response.content:
+            logger.error(
+                f"Empty response body from {response.url} "
+                f"(status={response.status_code}, headers={dict(response.headers)})"
+            )
+            raise ValueError(f"Empty response from Placer API: {response.url} (status {response.status_code})")
+        return response.json()
+
     def _shift_payload_dates(self, payload: dict, months: int = 1) -> dict:
         """Create a copy of the payload with dates shifted back by the given number of months for Placer data lag."""
         shifted = payload.copy()
@@ -85,7 +95,7 @@ class PlacerClient:
         response = requests.get(url, params=request_params, headers=self._headers)
         response.raise_for_status()
 
-        result = response.json()
+        result = self._safe_json(response)
         logger.info(f"POI search response for category {category}: {type(result)} keys={list(result.keys()) if result else 'empty'}")
 
         if result == {} or "data" not in result or not result.get("data"):
@@ -136,7 +146,7 @@ class PlacerClient:
                     logger.error(f"Demographics request timed out after {max_retries} attempts")
                     raise TimeoutError(f"Demographics request timed out after {max_retries} attempts")
 
-            result = response.json()
+            result = self._safe_json(response)
             logger.debug("Demographics data received successfully")
 
             self._set_cached(cache_key, result)
@@ -198,7 +208,7 @@ class PlacerClient:
                     logger.error(f"Visit trends request timed out after {max_retries} attempts")
                     raise TimeoutError(f"Visit trends request timed out after {max_retries} attempts")
 
-            result = response.json()
+            result = self._safe_json(response)
             logger.debug("Visit trends data received successfully")
 
             self._set_cached(cache_key, result)
@@ -243,7 +253,7 @@ class PlacerClient:
                 logger.error(f"Loyalty API error: {response.status_code}")
                 response.raise_for_status()
 
-            result = response.json()
+            result = self._safe_json(response)
             logger.debug("Loyalty data received successfully")
 
             self._set_cached(cache_key, result)
@@ -288,7 +298,7 @@ class PlacerClient:
                 logger.error(f"Trade area API error: {response.status_code}")
                 response.raise_for_status()
 
-            result = response.json()
+            result = self._safe_json(response)
             logger.debug("Trade area data received successfully")
 
             self._set_cached(cache_key, result)
@@ -323,7 +333,7 @@ class PlacerClient:
             logger.error(f"Ranking single API error: {response.status_code} - {response.text}")
             response.raise_for_status()
 
-        result = response.json()
+        result = self._safe_json(response)
         logger.debug("Ranking single data received successfully")
 
         self._set_cached(cache_key, result)
