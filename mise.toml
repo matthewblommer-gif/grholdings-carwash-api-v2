@@ -1,7 +1,0 @@
-[tools]
-python = "3.13"
-uv = "latest"
-
-[settings]
-python_compile = false
-python_precompiled_flavor = "install_only_stripped"
