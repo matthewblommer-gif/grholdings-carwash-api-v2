@@ -1,0 +1,7 @@
+[tools]
+python = "3.13"
+uv = "latest"
+
+[settings]
+python_compile = false
+python_flavor = "cpython"
