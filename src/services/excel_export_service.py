@@ -583,18 +583,19 @@ class ExcelExportService:
 
         last_row = row - 1
 
-        percentile_rule = ColorScaleRule(
-            start_type="num",
-            start_value=0,
-            start_color="F8696B",
-            mid_type="num",
-            mid_value=0.5,
-            mid_color="FFEB84",
-            end_type="num",
-            end_value=1,
-            end_color="63BE7B",
-        )
-        ws.conditional_formatting.add(f"C{data_start_row}:D{last_row}", percentile_rule)
+        if data_start_row <= last_row:
+            percentile_rule = ColorScaleRule(
+                start_type="num",
+                start_value=0,
+                start_color="F8696B",
+                mid_type="num",
+                mid_value=0.5,
+                mid_color="FFEB84",
+                end_type="num",
+                end_value=1,
+                end_color="63BE7B",
+            )
+            ws.conditional_formatting.add(f"C{data_start_row}:D{last_row}", percentile_rule)
 
         if data_start_row <= last_row:
             distance_rule = ColorScaleRule(
