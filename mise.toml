@@ -4,4 +4,4 @@ uv = "latest"
 
 [settings]
 python_compile = false
-python_flavor = "cpython"
+python_precompiled_flavor = "install_only_stripped"
