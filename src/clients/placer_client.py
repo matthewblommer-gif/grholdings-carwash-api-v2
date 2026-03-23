@@ -188,6 +188,15 @@ class PlacerClient:
             increment_placer_count()
             response = requests.post(url, json=payload, headers=headers)
 
+            if response.status_code == 204 or (response.status_code in [200, 207] and not response.content):
+                if attempt < max_retries - 1:
+                    logger.debug(f"Visit trends returned {response.status_code} with no data, retry {attempt + 1}/{max_retries}")
+                    time.sleep(retry_delay_seconds)
+                    continue
+                else:
+                    logger.error(f"Visit trends returned no data after {max_retries} attempts")
+                    raise TimeoutError(f"Visit trends returned no data after {max_retries} attempts")
+
             if response.status_code not in [200, 207]:
                 if response.status_code == 400 and _shift_count < 3 and "startDate" in payload:
                     shifted = self._shift_payload_dates(payload, months=_shift_count + 1)
@@ -233,6 +242,15 @@ class PlacerClient:
             increment_placer_count()
             response = requests.post(url, json=payload, headers=headers)
 
+            if response.status_code == 204 or (response.status_code in [200, 207] and not response.content):
+                if attempt < max_retries - 1:
+                    logger.debug(f"Loyalty returned {response.status_code} with no data, retry {attempt + 1}/{max_retries}")
+                    time.sleep(retry_delay_seconds)
+                    continue
+                else:
+                    logger.error(f"Loyalty returned no data after {max_retries} attempts")
+                    raise TimeoutError(f"Loyalty returned no data after {max_retries} attempts")
+
             if "IN_PROGRESS" in response.text or response.status_code == 202:
                 if attempt < max_retries - 1:
                     logger.debug(f"Loyalty data processing, retry {attempt + 1}/{max_retries}")
@@ -277,6 +295,15 @@ class PlacerClient:
         for attempt in range(max_retries):
             increment_placer_count()
             response = requests.post(url, json=payload, headers=headers)
+
+            if response.status_code == 204 or (response.status_code == 200 and not response.content):
+                if attempt < max_retries - 1:
+                    logger.debug(f"Trade area returned {response.status_code} with no data, retry {attempt + 1}/{max_retries}")
+                    time.sleep(retry_delay_seconds)
+                    continue
+                else:
+                    logger.error(f"Trade area returned no data after {max_retries} attempts")
+                    raise TimeoutError(f"Trade area returned no data after {max_retries} attempts")
 
             if "IN_PROGRESS" in response.text or response.status_code == 202:
                 if attempt < max_retries - 1:
